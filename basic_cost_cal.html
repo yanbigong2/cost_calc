@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>全球生活成本与收入锚定计算器 (多货币版)</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --bg: #f8fafc;
+            --border: #e2e8f0;
+            --text: #1e293b;
+            --header-bg: #f1f5f9;
+        }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }
+        .container { max-width: 1400px; margin: 0 auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+        
+        h1, h2 { margin-top: 0; color: #0f172a; }
+        .control-panel { display: flex; flex-wrap: wrap; gap: 20px; align-items: center; margin-bottom: 20px; padding: 15px; background: #eff6ff; border-radius: 8px; border: 1px solid #bfdbfe; }
+        
+        .control-group { display: flex; align-items: center; gap: 8px; }
+        select { padding: 8px; border-radius: 4px; border: 1px solid #ccc; font-size: 14px; min-width: 120px; }
+
+        /* Tables */
+        .table-wrapper { overflow-x: auto; margin-bottom: 30px; border: 1px solid var(--border); border-radius: 8px; }
+        table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 1100px; }
+        th, td { padding: 10px 12px; text-align: right; border-bottom: 1px solid var(--border); }
+        th { background: var(--header-bg); font-weight: 600; text-align: center; white-space: nowrap; }
+        th.text-left, td.text-left { text-align: left; }
+        tr:last-child td { border-bottom: none; }
+        tr:hover { background-color: #f8fafc; }
+
+        /* Inputs */
+        input[type="number"] { width: 100%; padding: 6px; border: 1px solid #cbd5e1; border-radius: 4px; text-align: right; font-family: monospace; }
+        input[type="number"]:focus { outline: 2px solid var(--primary); border-color: var(--primary); }
+        
+        /* Global Inputs (The Driver) */
+        .driver-inputs th { background: #1e293b; color: white; padding: 15px; }
+        .driver-inputs input { background: #334155; border: 1px solid #475569; color: white; font-size: 16px; font-weight: bold; }
+        
+        /* Toggles */
+        .toggle-btn { cursor: pointer; background: white; border: 1px solid #cbd5e1; padding: 4px 8px; border-radius: 4px; font-size: 12px; display: inline-flex; align-items: center; gap: 4px; }
+        .toggle-btn.active { background: #dbeafe; color: var(--primary); border-color: var(--primary); }
+        
+        .sub-label { font-size: 10px; color: #64748b; font-weight: normal; display: block; margin-top: 2px; }
+        
+        .negative { color: #dc2626; font-weight: bold; }
+        .positive { color: #16a34a; font-weight: bold; }
+
+        /* Cost specific inputs */
+        .cost-input-group { display: flex; gap: 4px; justify-content: flex-end; }
+        .cost-input-group input { width: 70px; text-align: center; }
+        .cost-input-group span { align-self: center; color: #94a3b8; font-size: 12px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap: wrap; gap: 10px; margin-bottom: 10px;">
+        <h1>全球生活成本锚定计算器</h1>
+        <div class="control-panel" style="margin-bottom:0;">
+            <div class="control-group">
+                <label style="font-weight:bold;">家庭模式：</label>
+                <select id="modeSelect" onchange="changeMode()">
+                    <option value="single">单人 (Single)</option>
+                    <option value="family">家庭 (Family - 2人1孩)</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label style="font-weight:bold;">货币单位：</label>
+                <select id="currencySelect" onchange="changeCurrency()">
+                    <option value="USD">🇺🇸 美元 (USD)</option>
+                    <option value="CNY">🇨🇳 人民币 (CNY)</option>
+                    <option value="HKD">🇭🇰 港币 (HKD)</option>
+                    <option value="GBP">🇬🇧 英镑 (GBP)</option>
+                    <option value="AED">🇦🇪 迪拉姆 (AED)</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <p style="color:#64748b; font-size: 13px; margin-bottom: 20px;">
+        说明：所有金额将根据所选货币自动换算。在蓝色区域输入任意一项，系统会自动反推其他列。
+    </p>
+
+    <h2>生活成本明细表 (月度/年度)</h2>
+    <p style="font-size:12px; color:#64748b;">
+        <span style="display:inline-flex; align-items:center; gap:4px; background:#dbeafe; padding:2px 6px; border-radius:4px; color:#2563eb;">🔗 联动开启</span> 
+        修改任意城市数值，其他城市按当前比例自动调整。点击按钮解锁 🔓 可单独修改。
+        <br><b>注意：</b> 下方输入框中的金额为<b>当前选择货币</b>。
+    </p>
+
+    <!-- 成本明细表 -->
+    <div class="table-wrapper">
+        <table id="costTable">
+            <thead>
+                <tr>
+                    <th class="text-left" style="width:120px;">城市</th>
+                    
+                    <!-- 房租 -->
+                    <th style="min-width:200px;">
+                        <div style="display:flex; justify-content:center; align-items:center; gap:5px;">
+                            🏠 房租 (月)
+                            <button class="toggle-btn active" id="link-rent" onclick="toggleLink('rent')">🔗</button>
+                        </div>
+                        <span class="sub-label">面积(㎡) × 单价<span class="currency-label"></span></span>
+                    </th>
+
+                    <!-- 交通 -->
+                    <th style="min-width:180px;">
+                        <div style="display:flex; justify-content:center; align-items:center; gap:5px;">
+                            🚗 交通 (月)
+                            <button class="toggle-btn active" id="link-transport" onclick="toggleLink('transport')">🔗</button>
+                        </div>
+                        <span class="sub-label">公交 + 打车</span>
+                    </th>
+
+                    <!-- 餐饮 -->
+                    <th style="min-width:240px;">
+                        <div style="display:flex; justify-content:center; align-items:center; gap:5px;">
+                            🍔 餐饮 (月)
+                            <button class="toggle-btn active" id="link-food" onclick="toggleLink('food')">🔗</button>
+                        </div>
+                        <span class="sub-label">自做(顿×单价) + 外食(顿×单价)</span>
+                    </th>
+
+                    <!-- 社交 -->
+                    <th style="min-width:120px;">
+                        <div style="display:flex; justify-content:center; align-items:center; gap:5px;">
+                            🍷 社交酒水 (月)
+                            <button class="toggle-btn active" id="link-social" onclick="toggleLink('social')">🔗</button>
+                        </div>
+                    </th>
+
+                    <!-- 杂费 -->
+                    <th style="min-width:120px;">
+                        <div style="display:flex; justify-content:center; align-items:center; gap:5px;">
+                            🛒 日用/杂货 (月)
+                            <button class="toggle-btn active" id="link-misc" onclick="toggleLink('misc')">🔗</button>
+                        </div>
+                    </th>
+
+                    <!-- 旅游 -->
+                    <th style="min-width:120px;">
+                        <div style="display:flex; justify-content:center; align-items:center; gap:5px;">
+                            ✈️ 休闲旅游 (年)
+                            <button class="toggle-btn active" id="link-travel" onclick="toggleLink('travel')">🔗</button>
+                        </div>
+                    </th>
+
+                    <th style="background:#f1f5f9;">总计 (年)</th>
+                </tr>
+            </thead>
+            <tbody id="costTableBody">
+                <!-- JS 渲染 -->
+            </tbody>
+        </table>
+    </div>
+
+    <h2>收入与储蓄对比表</h2>
+    <p style="font-size:12px; color:#64748b; margin-bottom: 10px;">
+        在蓝色区域输入任意一项（税前/税后/倍数/Big Mac），系统会自动反推其他列。
+        <br>年生活消费来自上方明细表计算结果。
+    </p>
+
+    <!-- 主数据表 -->
+    <div class="table-wrapper">
+        <table id="mainTable">
+            <thead>
+                <!-- 驱动输入行 -->
+                <tr class="driver-inputs">
+                    <th class="text-left" style="width: 150px;">统一基准设定 ➔</th>
+                    <th>
+                        <div>税前年薪 <span class="currency-label">(USD)</span></div>
+                        <input type="number" id="globalPreTax" placeholder="输入..." onchange="handleGlobalInput('preTax', this.value)">
+                    </th>
+                    <th>
+                        <div>税后年薪 <span class="currency-label">(USD)</span></div>
+                        <input type="number" id="globalPostTax" placeholder="输入..." onchange="handleGlobalInput('postTax', this.value)">
+                    </th>
+                    <!-- 移动后的位置：当地收入倍数 -->
+                    <th>
+                        <div>当地收入倍数 (税前)</div>
+                        <input type="number" id="globalMultiple" placeholder="输入..." onchange="handleGlobalInput('multiple', this.value)">
+                    </th>
+                    <!-- 移动后的位置：Big Mac -->
+                    <th>
+                        <div>Big Mac 购买力 (个)</div>
+                        <input type="number" id="globalBigMac" placeholder="输入..." onchange="handleGlobalInput('bigMac', this.value)">
+                    </th>
+                    <th style="background: #334155;">
+                        <div style="opacity:0.5">年生活总成本</div>
+                        <div style="font-size:12px; font-weight:normal; margin-top:5px;">(见上方明细表)</div>
+                    </th>
+                    <th style="background: #334155;">
+                        <div style="opacity:0.5">年结余</div>
+                        <div style="font-size:12px; font-weight:normal; margin-top:5px;">(税后 - 成本)</div>
+                    </th>
+                </tr>
+                <!-- 表头 -->
+                <tr>
+                    <th class="text-left">城市</th>
+                    <th>税前年薪 <span class="currency-label"></span></th>
+                    <th>税后年薪 <span class="currency-label"></span><br><span class="sub-label">含阶梯税率/社保</span></th>
+                    <th>当地收入倍数<br><span class="sub-label">税前 / 当地平均</span></th>
+                    <th>Big Mac 指数<br><span class="sub-label">税后 / 单价</span></th>
+                    <th>年生活消费 <span class="currency-label"></span><br><span class="sub-label">来自上方明细</span></th>
+                    <th>年结余 <span class="currency-label"></span><br><span class="sub-label">储蓄潜力</span></th>
+                </tr>
+            </thead>
+            <tbody id="mainTableBody">
+                <!-- JS 渲染 -->
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    // --- 1. 基础数据配置 (基准为 USD) ---
+    const CITIES_CONFIG = {
+        nyc: { name: "🇺🇸 纽约", bigMac: 5.69, avgIncome: 85000, taxRegion: 'us_ny' },
+        ldn: { name: "🇬🇧 伦敦", bigMac: 5.39, avgIncome: 58000, taxRegion: 'uk' },
+        hk:  { name: "🇭🇰 香港", bigMac: 2.95, avgIncome: 38000, taxRegion: 'hk' },
+        dxb: { name: "🇦🇪 迪拜", bigMac: 4.90, avgIncome: 50000, taxRegion: 'uae' },
+        sh:  { name: "🇨🇳 上海", bigMac: 3.56, avgIncome: 24000, taxRegion: 'cn' }
+    };
+
+    const CURRENCIES = {
+        USD: { rate: 1, symbol: '$' },
+        CNY: { rate: 7.23, symbol: '¥' },
+        HKD: { rate: 7.82, symbol: 'HK$' },
+        GBP: { rate: 0.79, symbol: '£' },
+        AED: { rate: 3.67, symbol: 'AED' }
+    };
+
+    // 默认生活成本 (USD)
+    // 餐饮顿数统一为 30 (在家) + 30 (在外)
+    const DEFAULTS = {
+        single: {
+            nyc: { rentArea: 50, rentPrice: 70, transPub: 130, transTaxi: 400, foodHomeMeals: 30, foodHomePrice: 15, foodOutMeals: 30, foodOutPrice: 40, social: 800, misc: 600, travel: 3000 },
+            ldn: { rentArea: 50, rentPrice: 50, transPub: 200, transTaxi: 100, foodHomeMeals: 30, foodHomePrice: 10, foodOutMeals: 30, foodOutPrice: 35, social: 700, misc: 500, travel: 2500 },
+            hk:  { rentArea: 35, rentPrice: 60, transPub: 80, transTaxi: 200, foodHomeMeals: 30, foodHomePrice: 10, foodOutMeals: 30, foodOutPrice: 15, social: 800, misc: 300, travel: 2000 },
+            dxb: { rentArea: 60, rentPrice: 30, transPub: 0, transTaxi: 600, foodHomeMeals: 30, foodHomePrice: 12, foodOutMeals: 30, foodOutPrice: 30, social: 1000, misc: 400, travel: 2500 },
+            sh:  { rentArea: 60, rentPrice: 25, transPub: 30, transTaxi: 150, foodHomeMeals: 30, foodHomePrice: 6, foodOutMeals: 30, foodOutPrice: 10, social: 400, misc: 200, travel: 1500 }
+        },
+        family: {
+            nyc: { rentArea: 100, rentPrice: 65, transPub: 260, transTaxi: 600, foodHomeMeals: 30, foodHomePrice: 24, foodOutMeals: 30, foodOutPrice: 80, social: 1200, misc: 1500, travel: 8000 },
+            ldn: { rentArea: 100, rentPrice: 45, transPub: 300, transTaxi: 200, foodHomeMeals: 30, foodHomePrice: 18, foodOutMeals: 30, foodOutPrice: 70, social: 1000, misc: 1200, travel: 7000 },
+            hk:  { rentArea: 80, rentPrice: 55, transPub: 150, transTaxi: 400, foodHomeMeals: 30, foodHomePrice: 20, foodOutMeals: 30, foodOutPrice: 30, social: 1200, misc: 800, travel: 6000 },
+            dxb: { rentArea: 120, rentPrice: 30, transPub: 0, transTaxi: 1000, foodHomeMeals: 30, foodHomePrice: 22, foodOutMeals: 30, foodOutPrice: 60, social: 1500, misc: 1000, travel: 8000 },
+            sh:  { rentArea: 120, rentPrice: 22, transPub: 60, transTaxi: 300, foodHomeMeals: 30, foodHomePrice: 12, foodOutMeals: 30, foodOutPrice: 25, social: 600, misc: 600, travel: 4000 }
+        }
+    };
+
+    // --- 2. 状态管理 ---
+    let state = {
+        mode: 'single',
+        currency: 'USD',
+        costs: JSON.parse(JSON.stringify(DEFAULTS.single)), // Stores USD values
+        links: { rent: true, transport: true, food: true, social: true, misc: true, travel: true },
+        incomes: { nyc: 100000, ldn: 100000, hk: 100000, dxb: 100000, sh: 100000 }, // Stores USD values
+        // 记录上一次的输入值类型，用于切换货币时刷新输入框
+        lastInputType: 'preTax', 
+        lastInputValue: 100000 // USD
+    };
+
+    // --- 3. 货币转换工具 ---
+    function getRate() {
+        return CURRENCIES[state.currency].rate;
+    }
+    function getSymbol() {
+        return CURRENCIES[state.currency].symbol;
+    }
+    // USD -> Selected Currency
+    function toDisplay(usdValue) {
+        return usdValue * getRate();
+    }
+    // Selected Currency -> USD
+    function fromDisplay(displayValue) {
+        return displayValue / getRate();
+    }
+    function formatMoney(usdValue) {
+        return getSymbol() + toDisplay(usdValue).toLocaleString(undefined, {maximumFractionDigits:0});
+    }
+
+    // --- 4. 税务引擎 (USD Base) ---
+    function calculateNetIncome(gross, region) {
+        if (gross <= 0) return 0;
+        let tax = 0;
+        
+        if (region === 'uae') {
+            return gross;
+        } 
+        else if (region === 'us_ny') {
+            let fica = Math.min(gross, 168600) * 0.0765 + Math.max(0, gross - 168600) * 0.0145;
+            let fed = 0;
+            if (gross > 11000) fed += (Math.min(gross, 44000) - 11000) * 0.12;
+            if (gross > 44000) fed += (Math.min(gross, 95000) - 44000) * 0.22;
+            if (gross > 95000) fed += (Math.min(gross, 182000) - 95000) * 0.24;
+            if (gross > 182000) fed += (Math.min(gross, 231000) - 182000) * 0.32;
+            if (gross > 231000) fed += (Math.max(0, gross - 231000)) * 0.35;
+            let stateCity = gross * 0.09; 
+            tax = fica + fed + stateCity;
+        } 
+        else if (region === 'uk') {
+            let ni = 0;
+            if (gross > 12000) ni = (Math.min(gross, 60000) - 12000) * 0.10;
+            if (gross > 60000) ni += (gross - 60000) * 0.02;
+            let incomeTax = 0;
+            if (gross > 16000) incomeTax += (Math.min(gross, 63000) - 16000) * 0.20;
+            if (gross > 63000) incomeTax += (Math.min(gross, 150000) - 63000) * 0.40;
+            if (gross > 150000) incomeTax += (gross - 150000) * 0.45;
+            tax = ni + incomeTax;
+        } 
+        else if (region === 'hk') {
+            let progressive = 0;
+            let netAssessable = Math.max(0, gross - 20000);
+            if (netAssessable > 0) progressive += Math.min(netAssessable, 6000) * 0.02;
+            if (netAssessable > 6000) progressive += (Math.min(netAssessable, 12000) - 6000) * 0.06;
+            if (netAssessable > 12000) progressive += (Math.min(netAssessable, 18000) - 12000) * 0.10;
+            if (netAssessable > 18000) progressive += (Math.min(netAssessable, 24000) - 18000) * 0.14;
+            if (netAssessable > 24000) progressive += (netAssessable - 24000) * 0.17;
+            let standard = gross * 0.15;
+            tax = Math.min(progressive, standard);
+        }
+        else if (region === 'cn') {
+            let social = Math.min(gross * 0.175, 5000);
+            let taxable = Math.max(0, gross - social - 10000);
+            let it = 0;
+            if (taxable > 0) it += Math.min(taxable, 6000) * 0.03;
+            if (taxable > 6000) it += (Math.min(taxable, 20000) - 6000) * 0.10;
+            if (taxable > 20000) it += (Math.min(taxable, 42000) - 20000) * 0.20;
+            if (taxable > 42000) it += (Math.min(taxable, 60000) - 42000) * 0.25;
+            if (taxable > 60000) it += (Math.min(taxable, 80000) - 60000) * 0.30;
+            if (taxable > 80000) it += (Math.min(taxable, 110000) - 80000) * 0.35;
+            if (taxable > 110000) it += (taxable - 110000) * 0.45;
+            tax = social + it;
+        }
+        return gross - tax;
+    }
+
+    function calculateGrossFromNet(targetNet, region) {
+        if (targetNet <= 0) return 0;
+        if (region === 'uae') return targetNet;
+        let low = targetNet;
+        let high = targetNet * 3;
+        let mid = 0;
+        for (let i = 0; i < 20; i++) {
+            mid = (low + high) / 2;
+            let estimatedNet = calculateNetIncome(mid, region);
+            if (estimatedNet < targetNet) {
+                low = mid;
+            } else {
+                high = mid;
+            }
+        }
+        return mid;
+    }
+
+    // --- 5. 逻辑处理 ---
+
+    function changeMode() {
+        state.mode = document.getElementById('modeSelect').value;
+        state.costs = JSON.parse(JSON.stringify(DEFAULTS[state.mode]));
+        renderAll();
+    }
+
+    function changeCurrency() {
+        state.currency = document.getElementById('currencySelect').value;
+        // 刷新输入框显示
+        refreshDriverInputs();
+        renderAll();
+    }
+
+    function toggleLink(key) {
+        state.links[key] = !state.links[key];
+        const btn = document.getElementById(`link-${key}`);
+        if (state.links[key]) {
+            btn.classList.add('active');
+            btn.innerText = '🔗';
+        } else {
+            btn.classList.remove('active');
+            btn.innerText = '🔓';
+        }
+    }
+
+    // 核心：处理全局输入
+    function handleGlobalInput(type, displayValue) {
+        const val = parseFloat(displayValue);
+        if (isNaN(val)) return;
+
+        // 记录状态以便切换货币时恢复
+        state.lastInputType = type;
+        
+        // 将输入值（当前货币）转换为 USD
+        let usdVal = fromDisplay(val);
+        if (type === 'bigMac' || type === 'multiple') {
+            usdVal = val; // 这些是数量或倍数，不涉及汇率
+        }
+
+        // 清空其他输入框 (视觉上)
+        if(type !== 'preTax') document.getElementById('globalPreTax').value = '';
+        if(type !== 'postTax') document.getElementById('globalPostTax').value = '';
+        if(type !== 'bigMac') document.getElementById('globalBigMac').value = '';
+        if(type !== 'multiple') document.getElementById('globalMultiple').value = '';
+
+        Object.keys(CITIES_CONFIG).forEach(cityKey => {
+            const config = CITIES_CONFIG[cityKey];
+            let calculatedGross = 0;
+
+            if (type === 'preTax') {
+                calculatedGross = usdVal;
+            } else if (type === 'postTax') {
+                calculatedGross = calculateGrossFromNet(usdVal, config.taxRegion);
+            } else if (type === 'bigMac') {
+                const targetNet = usdVal * config.bigMac;
+                calculatedGross = calculateGrossFromNet(targetNet, config.taxRegion);
+            } else if (type === 'multiple') {
+                calculatedGross = usdVal * config.avgIncome;
+            }
+            state.incomes[cityKey] = calculatedGross;
+        });
+
+        // 记录基准值用于刷新
+        if(type === 'preTax') state.lastInputValue = usdVal; 
+        
+        renderAll();
+    }
+
+    function refreshDriverInputs() {
+        // 切换货币时，清空输入框，防止数值混淆，或者根据当前税前收入反填
+        // 这里选择清空并反填第一个（税前），给用户直观感受
+        const baseGross = state.incomes['nyc']; // 以纽约为基准
+        document.getElementById('globalPreTax').value = Math.round(toDisplay(baseGross));
+        document.getElementById('globalPostTax').value = '';
+        document.getElementById('globalBigMac').value = '';
+        document.getElementById('globalMultiple').value = '';
+    }
+
+    // 处理生活成本修改
+    function updateCost(sourceCity, category, subField, displayValue) {
+        const val = parseFloat(displayValue) || 0;
+        
+        // 某些字段是数量/面积，不需要汇率转换
+        const isQuantity = (subField === 'Area' || subField === 'HomeMeals' || subField === 'OutMeals');
+        
+        // 转换为 USD 存储
+        const usdValue = isQuantity ? val : fromDisplay(val);
+
+        const oldValue = subField 
+            ? state.costs[sourceCity][category + subField] 
+            : state.costs[sourceCity][category];
+
+        const ratio = (oldValue === 0) ? 1 : (usdValue / oldValue);
+
+        Object.keys(state.costs).forEach(cityKey => {
+            if (!state.links[category] && cityKey !== sourceCity) return;
+            const currentCityCost = state.costs[cityKey];
+            
+            if (cityKey === sourceCity) {
+                if (subField) currentCityCost[category + subField] = usdValue;
+                else currentCityCost[category] = usdValue;
+            } else {
+                if (subField) currentCityCost[category + subField] *= ratio;
+                else currentCityCost[category] *= ratio;
+            }
+        });
+
+        renderAll();
+    }
+
+    function calculateTotalCost(cityKey) {
+        const c = state.costs[cityKey];
+        const rent = c.rentArea * c.rentPrice * 12;
+        const transport = (c.transPub + c.transTaxi) * 12;
+        const food = ((c.foodHomeMeals * c.foodHomePrice) + (c.foodOutMeals * c.foodOutPrice)) * 12; 
+        const social = c.social * 12;
+        const misc = c.misc * 12;
+        const travel = c.travel; 
+        return rent + transport + food + social + misc + travel;
+    }
+
+    // --- 6. 渲染 ---
+
+    function updateCurrencyLabels() {
+        const symbol = `(${CURRENCIES[state.currency].symbol})`;
+        document.querySelectorAll('.currency-label').forEach(el => el.innerText = symbol);
+    }
+
+    function renderAll() {
+        updateCurrencyLabels();
+        renderMainTable();
+        renderCostTable();
+    }
+
+    function renderMainTable() {
+        const tbody = document.getElementById('mainTableBody');
+        tbody.innerHTML = '';
+
+        Object.keys(CITIES_CONFIG).forEach(key => {
+            const config = CITIES_CONFIG[key];
+            const gross = state.incomes[key];
+            const net = calculateNetIncome(gross, config.taxRegion);
+            const bigMacIndex = net / config.bigMac;
+            const totalCost = calculateTotalCost(key);
+            const savings = net - totalCost;
+            const multiple = gross / config.avgIncome;
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td class="text-left font-bold">${config.name}</td>
+                <td>${formatMoney(gross)}</td>
+                <td style="color:#2563eb; font-weight:bold;">${formatMoney(net)}</td>
+                <td style="color:#7c3aed; font-weight:bold;">${multiple.toFixed(1)}x</td>
+                <td>${bigMacIndex.toLocaleString(undefined, {maximumFractionDigits:0})} 🍔</td>
+                <td>${formatMoney(totalCost)}</td>
+                <td class="${savings >= 0 ? 'positive' : 'negative'}">${formatMoney(savings)}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function renderCostTable() {
+        const tbody = document.getElementById('costTableBody');
+        tbody.innerHTML = '';
+
+        Object.keys(CITIES_CONFIG).forEach(key => {
+            const c = state.costs[key];
+            const name = CITIES_CONFIG[key].name;
+            const total = calculateTotalCost(key);
+
+            // 辅助：转为显示值并保留小数
+            const d = (usd, fix=0) => toDisplay(usd).toFixed(fix);
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td class="text-left font-bold">${name}</td>
+                
+                <!-- Rent -->
+                <td>
+                    <div class="cost-input-group">
+                        <input type="number" value="${c.rentArea}" onchange="updateCost('${key}', 'rent', 'Area', this.value)">
+                        <span>㎡ ×</span>
+                        <input type="number" value="${d(c.rentPrice, 1)}" onchange="updateCost('${key}', 'rent', 'Price', this.value)">
+                    </div>
+                    <div class="sub-label text-right">${formatMoney(c.rentArea * c.rentPrice)}/月</div>
+                </td>
+
+                <!-- Transport -->
+                <td>
+                    <div class="cost-input-group">
+                        <input type="number" value="${d(c.transPub)}" onchange="updateCost('${key}', 'trans', 'Pub', this.value)">
+                        <span>+</span>
+                        <input type="number" value="${d(c.transTaxi)}" onchange="updateCost('${key}', 'trans', 'Taxi', this.value)">
+                    </div>
+                    <div class="sub-label text-right">${formatMoney(c.transPub + c.transTaxi)}/月</div>
+                </td>
+
+                <!-- Food -->
+                <td>
+                    <div class="cost-input-group" style="margin-bottom:2px;">
+                        <span>🏠</span>
+                        <input type="number" value="${c.foodHomeMeals}" onchange="updateCost('${key}', 'food', 'HomeMeals', this.value)">
+                        <span>×</span>
+                        <input type="number" value="${d(c.foodHomePrice, 1)}" onchange="updateCost('${key}', 'food', 'HomePrice', this.value)">
+                    </div>
+                    <div class="cost-input-group">
+                        <span>🥡</span>
+                        <input type="number" value="${c.foodOutMeals}" onchange="updateCost('${key}', 'food', 'OutMeals', this.value)">
+                        <span>×</span>
+                        <input type="number" value="${d(c.foodOutPrice, 1)}" onchange="updateCost('${key}', 'food', 'OutPrice', this.value)">
+                    </div>
+                    <div class="sub-label text-right">月合计: ${formatMoney((c.foodHomeMeals*c.foodHomePrice) + (c.foodOutMeals*c.foodOutPrice))}</div>
+                </td>
+
+                <!-- Social -->
+                <td>
+                    <input type="number" value="${d(c.social)}" onchange="updateCost('${key}', 'social', null, this.value)">
+                </td>
+
+                <!-- Misc -->
+                <td>
+                    <input type="number" value="${d(c.misc)}" onchange="updateCost('${key}', 'misc', null, this.value)">
+                </td>
+
+                <!-- Travel -->
+                <td>
+                    <input type="number" value="${d(c.travel)}" onchange="updateCost('${key}', 'travel', null, this.value)">
+                </td>
+
+                <td style="font-weight:bold; background:#f1f5f9;">${formatMoney(total)}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    // 初始化
+    document.getElementById('globalPreTax').value = 150000;
+    handleGlobalInput('preTax', 150000);
+
+</script>
+
+</body>
+</html>

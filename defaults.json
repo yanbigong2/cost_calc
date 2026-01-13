@@ -1,0 +1,184 @@
+{
+  "version": "2025.1",
+  "updated": "2025-01-15",
+  "currencies": {
+    "USD": { "rate": 1, "symbol": "$" },
+    "CNY": { "rate": 7.23, "symbol": "¥" },
+    "HKD": { "rate": 7.82, "symbol": "HK$" },
+    "GBP": { "rate": 0.79, "symbol": "£" },
+    "AED": { "rate": 3.67, "symbol": "AED" }
+  },
+  "cities": {
+    "nyc": {
+      "name": "🇺🇸 纽约",
+      "bigMac": 5.69,
+      "avgIncome": 85000,
+      "taxRegion": "us_ny"
+    },
+    "ldn": {
+      "name": "🇬🇧 伦敦",
+      "bigMac": 5.39,
+      "avgIncome": 58000,
+      "taxRegion": "uk"
+    },
+    "hk": {
+      "name": "🇭🇰 香港",
+      "bigMac": 2.95,
+      "avgIncome": 38000,
+      "taxRegion": "hk"
+    },
+    "dxb": {
+      "name": "🇦🇪 迪拜",
+      "bigMac": 4.90,
+      "avgIncome": 50000,
+      "taxRegion": "uae"
+    },
+    "sh": {
+      "name": "🇨🇳 上海",
+      "bigMac": 3.56,
+      "avgIncome": 24000,
+      "taxRegion": "cn"
+    }
+  },
+  "defaultCosts": {
+    "single": {
+      "nyc": {
+        "rentArea": 50,
+        "rentPrice": 70,
+        "transPub": 130,
+        "transTaxi": 400,
+        "foodHomeMeals": 30,
+        "foodHomePrice": 15,
+        "foodOutMeals": 30,
+        "foodOutPrice": 40,
+        "social": 800,
+        "misc": 600,
+        "travel": 3000
+      },
+      "ldn": {
+        "rentArea": 50,
+        "rentPrice": 50,
+        "transPub": 200,
+        "transTaxi": 100,
+        "foodHomeMeals": 30,
+        "foodHomePrice": 10,
+        "foodOutMeals": 30,
+        "foodOutPrice": 35,
+        "social": 700,
+        "misc": 500,
+        "travel": 2500
+      },
+      "hk": {
+        "rentArea": 35,
+        "rentPrice": 60,
+        "transPub": 80,
+        "transTaxi": 200,
+        "foodHomeMeals": 30,
+        "foodHomePrice": 10,
+        "foodOutMeals": 30,
+        "foodOutPrice": 15,
+        "social": 800,
+        "misc": 300,
+        "travel": 2000
+      },
+      "dxb": {
+        "rentArea": 60,
+        "rentPrice": 30,
+        "transPub": 0,
+        "transTaxi": 600,
+        "foodHomeMeals": 30,
+        "foodHomePrice": 12,
+        "foodOutMeals": 30,
+        "foodOutPrice": 30,
+        "social": 1000,
+        "misc": 400,
+        "travel": 2500
+      },
+      "sh": {
+        "rentArea": 60,
+        "rentPrice": 25,
+        "transPub": 30,
+        "transTaxi": 150,
+        "foodHomeMeals": 30,
+        "foodHomePrice": 6,
+        "foodOutMeals": 30,
+        "foodOutPrice": 10,
+        "social": 400,
+        "misc": 200,
+        "travel": 1500
+      }
+    },
+    "family": {
+      "nyc": {
+        "rentArea": 100,
+        "rentPrice": 65,
+        "transPub": 260,
+        "transTaxi": 600,
+        "foodHomeMeals": 30,
+        "foodHomePrice": 24,
+        "foodOutMeals": 30,
+        "foodOutPrice": 80,
+        "social": 1200,
+        "misc": 1500,
+        "travel": 8000
+      },
+      "ldn": {
+        "rentArea": 100,
+        "rentPrice": 45,
+        "transPub": 300,
+        "transTaxi": 200,
+        "foodHomeMeals": 30,
+        "foodHomePrice": 18,
+        "foodOutMeals": 30,
+        "foodOutPrice": 70,
+        "social": 1000,
+        "misc": 1200,
+        "travel": 7000
+      },
+      "hk": {
+        "rentArea": 80,
+        "rentPrice": 55,
+        "transPub": 150,
+        "transTaxi": 400,
+        "foodHomeMeals": 30,
+        "foodHomePrice": 20,
+        "foodOutMeals": 30,
+        "foodOutPrice": 30,
+        "social": 1200,
+        "misc": 800,
+        "travel": 6000
+      },
+      "dxb": {
+        "rentArea": 120,
+        "rentPrice": 30,
+        "transPub": 0,
+        "transTaxi": 1000,
+        "foodHomeMeals": 30,
+        "foodHomePrice": 22,
+        "foodOutMeals": 30,
+        "foodOutPrice": 60,
+        "social": 1500,
+        "misc": 1000,
+        "travel": 8000
+      },
+      "sh": {
+        "rentArea": 120,
+        "rentPrice": 22,
+        "transPub": 60,
+        "transTaxi": 300,
+        "foodHomeMeals": 30,
+        "foodHomePrice": 12,
+        "foodOutMeals": 30,
+        "foodOutPrice": 25,
+        "social": 600,
+        "misc": 600,
+        "travel": 4000
+      }
+    }
+  },
+  "hkDiscount": {
+    "misc": 0.75,
+    "food": 0.90,
+    "travel": 0.95
+  }
+}
